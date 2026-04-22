@@ -1,38 +1,21 @@
-export function safeParseJSON<T>(jsonString: string): T | null {
-    try {
-        return JSON.parse(jsonString) as T;
-    } catch (error) {
-        console.error('Failed to parse JSON:', error);
-        return null;
-    }
-}
-
-export function assertIsDefined<T>(value: T | null | undefined, variableName: string): T {
-    if (value === null || value === undefined) {
-        throw new Error(`${variableName} is not defined`);
-    }
-    return value;
-}
-
-export function fetchData(url: string): Promise<any> {
-    return fetch(url)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
+export async function retry<T>(fn: () => Promise<T>, retries: number = 3, delay: number = 1000): Promise<T> {
+    let attempts = 0;
+    while (attempts < retries) {
+        try {
+            return await fn();
+        } catch (error) {
+            attempts++;
+            if (attempts >= retries) {
+                throw error;
             }
-            return response.json();
-        })
-        .catch(error => {
-            console.error('Error fetching data:', error);
-            throw error;
-        });
+            console.warn(`Attempt ${attempts} failed. Retrying in ${delay}ms...`);
+            await new Promise(res => setTimeout(res, delay));
+            delay *= 2; // Exponential backoff
+        }
+    }
+    throw new Error('Retries exhausted');
 }
 
-export function validateUserInput(input: string, maxLength: number): void {
-    if (!input || typeof input !== 'string') {
-        throw new Error('Input must be a non-empty string');
-    }
-    if (input.length > maxLength) {
-        throw new Error(`Input exceeds maximum length of ${maxLength}`);
-    }
-}
+export const fetchWithRetry = async (url: string, options: RequestInit = {}): Promise<Response> => {
+    return retry(() => fetch(url, options));
+};
