@@ -1,21 +1,37 @@
-export async function retry<T>(fn: () => Promise<T>, retries: number = 3, delay: number = 1000): Promise<T> {
-    let attempts = 0;
-    while (attempts < retries) {
-        try {
-            return await fn();
-        } catch (error) {
-            attempts++;
-            if (attempts >= retries) {
-                throw error;
-            }
-            console.warn(`Attempt ${attempts} failed. Retrying in ${delay}ms...`);
-            await new Promise(res => setTimeout(res, delay));
-            delay *= 2; // Exponential backoff
-        }
-    }
-    throw new Error('Retries exhausted');
+import * as fs from 'fs';
+import * as path from 'path';
+import { createLogger, transports, format } from 'winston';
+
+const logDir = 'logs';
+
+// Ensure log directory exists
+if (!fs.existsSync(logDir)) {
+    fs.mkdirSync(logDir);
 }
 
-export const fetchWithRetry = async (url: string, options: RequestInit = {}): Promise<Response> => {
-    return retry(() => fetch(url, options));
-};
+const fileTransport = new transports.File({
+    filename: path.join(logDir, 'app.log'),
+    level: 'info',
+    format: format.combine(
+        format.timestamp(),
+        format.json()
+    ),
+    maxSize: '20m',
+    maxFiles: '14d' // Keep logs for 14 days
+});
+
+const consoleTransport = new transports.Console({
+    level: 'debug',
+    format: format.combine(
+        format.colorize(),
+        format.simple()
+    )
+});
+
+const logger = createLogger({
+    transports: [fileTransport, consoleTransport],
+});
+
+export function setupLogger() {
+    return logger;
+}
