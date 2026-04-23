@@ -1,35 +1,34 @@
-// Utility function to handle Roblox data
-
-interface RobloxData {  
-    id: number;  
-    name: string;  
-    creator?: string;  
-    createdDate?: Date;  
+export function safeParseJson(input: string): any {
+    try {
+        return JSON.parse(input);
+    } catch (error) {
+        console.error('Invalid JSON input', error);
+        return null;
+    }
 }
 
-/**  
- * Converts a raw Roblox data object to a structured format.  
- *  
- * @param rawData - The raw data from Roblox API  
- * @returns A structured RobloxData object  
- */  
-function parseRobloxData(rawData: any): RobloxData {  
-    return {  
-        id: rawData.id,  
-        name: rawData.name,  
-        creator: rawData.creator || 'Unknown',  
-        createdDate: rawData.createdDate ? new Date(rawData.createdDate) : undefined  
-    };  
+export function ensureNumber(value: any): number {
+    if (typeof value !== 'number') {
+        console.error('Expected a number, got:', value);
+        throw new TypeError('Expected a number');
+    }
+    return value;
 }
 
-/**  
- * Converts an array of raw Roblox data objects to structured format.  
- *  
- * @param rawDataArray - An array of raw data objects from the Roblox API  
- * @returns An array of structured RobloxData objects  
- */  
-function parseRobloxDataArray(rawDataArray: any[]): RobloxData[] {  
-    return rawDataArray.map(parseRobloxData);  
+export function validateString(input: any): string {
+    if (typeof input !== 'string') {
+        console.error('Expected a string, got:', input);
+        throw new TypeError('Expected a string');
+    }
+    return input;
 }
 
-export { parseRobloxData, parseRobloxDataArray };
+export function handleApiResponse(response: Response): Promise<any> {
+    if (!response.ok) {
+        return response.json().then(error => {
+            console.error('API error:', error);
+            throw new Error(error.message);
+        });
+    }
+    return response.json();
+}
