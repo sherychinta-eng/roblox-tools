@@ -1,57 +1,29 @@
-// TypeScript types for Roblox tools
-
-/**
- * Represents a user in the Roblox game.
- * @interface User
- */
-export interface User {
-    /** The unique identifier of the user */
-    id: string;
-    /** The username of the user */
-    username: string;
-    /** The user's avatar URL */
-    avatarUrl: string;
-    /** The user's friends list */
-    friends: Array<User>;
+export interface RobloxResponse<T> {
+    data: T | null;
+    error: string | null;
 }
 
-/**
- * Represents a game in Roblox.
- * @interface Game
- */
-export interface Game {
-    /** The unique identifier of the game */
-    id: string;
-    /** The name of the game */
-    name: string;
-    /** The user's rating of the game */
-    rating: number;
-    /** The total number of visits to the game */
-    visits: number;
+export function handleRobloxApiResponse<T>(response: any): RobloxResponse<T> {
+    // Check if the response is in the expected format
+    if (!response || typeof response !== 'object') {
+        return { data: null, error: 'Invalid response format' };
+    }
+
+    // Check for success or error in the response
+    if (response.success === true) {
+        return { data: response.data as T, error: null };
+    } else if (response.error) {
+        return { data: null, error: response.error }; 
+    } else {
+        return { data: null, error: 'Unknown error occurred' };
+    }
 }
 
-/**
- * Represents a game pass in Roblox.
- * @interface GamePass
- */
-export interface GamePass {
-    /** The unique identifier of the game pass */
-    id: string;
-    /** The name of the game pass */
-    name: string;
-    /** The price of the game pass */
-    price: number;
-}
-
-/**
- * Represents a collection of items.
- * @interface ItemCollection
- */
-export interface ItemCollection {
-    /** The unique identifier for the collection */
-    id: string;
-    /** The name of the collection */
-    name: string;
-    /** List of items in the collection */
-    items: Array<string>;
+export function validatePlayerId(playerId: string): boolean {
+    // Check if playerId is a valid format
+    const regex = /^[0-9]+$/;
+    if (!regex.test(playerId)) {
+        throw new Error('Invalid player ID format');
+    }
+    return true;
 }
