@@ -1,42 +1,38 @@
-export function safeDivide(numerator: number, denominator: number): number | null {
-    if (isNaN(numerator) || isNaN(denominator)) {
-        console.error('Invalid input: numerator and denominator must be numbers.');
-        return null;
-    }
-    if (denominator === 0) {
-        console.error('Division by zero error.');
-        return null;
-    }
-    return numerator / denominator;
-}
-
-export function parseJson(input: string): object | null {
+export function safeParseJson<T>(jsonString: string): T | null {
     try {
-        return JSON.parse(input);
+        return JSON.parse(jsonString);
     } catch (error) {
-        console.error('Invalid JSON format:', error);
+        console.error('Failed to parse JSON:', error);
         return null;
     }
 }
 
-export function validateEmail(email: string): boolean {
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    if (!emailRegex.test(email)) {
-        console.error('Invalid email format:', email);
+export function validateUserData(userData: any): boolean {
+    if (!userData || typeof userData !== 'object') {
+        console.warn('Invalid user data provided: ', userData);
+        return false;
+    }
+    const { username, age } = userData;
+    if (typeof username !== 'string' || username.trim() === '') {
+        console.warn('Invalid username provided: ', username);
+        return false;
+    }
+    if (typeof age !== 'number' || age <= 0) {
+        console.warn('Invalid age provided: ', age);
         return false;
     }
     return true;
 }
 
-export function safeFetch(url: string): Promise<Response | null> {
-    return fetch(url).then(response => {
+export function handleApiResponse<T>(response: Response): Promise<T | null> {
+    return response.json().then(data => {
         if (!response.ok) {
-            console.error('HTTP error:', response.status);
+            console.error('API Error:', data);
             return null;
         }
-        return response;
+        return data as T;
     }).catch(error => {
-        console.error('Fetch error:', error);
+        console.error('Failed to handle API response:', error);
         return null;
     });
 }
