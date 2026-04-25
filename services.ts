@@ -1,43 +1,33 @@
-// Service to manage player data
-import { PlayerData } from './types';
+type InputData = { name: string; age: number; email: string; };
 
-export class PlayerService {
-    private players: Map<number, PlayerData>;
+type ValidationResult = { isValid: boolean; errors: string[]; };
 
-    constructor() {
-        this.players = new Map();
+function validateInput(data: InputData): ValidationResult {
+    const errors: string[] = [];
+    if (!data.name || data.name.length < 3) {
+        errors.push('Name must be at least 3 characters long.');
     }
-
-    // Adds a new player
-    public addPlayer(playerId: number, data: PlayerData): void {
-        if (this.players.has(playerId)) {
-            throw new Error('Player already exists.');
-        }
-        this.players.set(playerId, data);
+    if (data.age < 0 || data.age > 120) {
+        errors.push('Age must be between 0 and 120.');
     }
-
-    // Retrieves player data
-    public getPlayer(playerId: number): PlayerData | undefined {
-        return this.players.get(playerId);
+    const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
+    if (!emailRegex.test(data.email)) {
+        errors.push('Email must be a valid email address.');
     }
-
-    // Updates existing player data
-    public updatePlayer(playerId: number, data: PlayerData): void {
-        if (!this.players.has(playerId)) {
-            throw new Error('Player does not exist.');
-        }
-        this.players.set(playerId, data);
-    }
-
-    // Removes a player
-    public removePlayer(playerId: number): void {
-        if (!this.players.delete(playerId)) {
-            throw new Error('Player does not exist.');
-        }
-    }
-
-    // Clears all player data
-    public clearPlayers(): void {
-        this.players.clear();
-    }
+    return { isValid: errors.length === 0, errors };
 }
+
+function processInput(data: InputData) {
+    const validation = validateInput(data);
+    if (!validation.isValid) {
+        console.error('Input validation failed:', validation.errors);
+        return;
+    }
+    // Proceed with main processing logic if valid
+    console.log('Processing:', data);
+    // Additional processing code here
+}
+
+// Example usage
+const userInput: InputData = { name: 'Jane', age: 30, email: 'jane@example.com' };
+processInput(userInput);
