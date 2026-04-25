@@ -1,41 +1,43 @@
-import { createLogger, format, transports } from 'winston';
-import { Logger } from 'winston';
-import * as path from 'path';
-import { promises as fs } from 'fs';
+// Service to manage player data
+import { PlayerData } from './types';
 
-const logDir = path.join(__dirname, 'logs');
+export class PlayerService {
+    private players: Map<number, PlayerData>;
 
-// Ensure log directory exists
-async function ensureLogDir() {
-    try {
-        await fs.access(logDir);
-    } catch (error) {
-        await fs.mkdir(logDir);
+    constructor() {
+        this.players = new Map();
+    }
+
+    // Adds a new player
+    public addPlayer(playerId: number, data: PlayerData): void {
+        if (this.players.has(playerId)) {
+            throw new Error('Player already exists.');
+        }
+        this.players.set(playerId, data);
+    }
+
+    // Retrieves player data
+    public getPlayer(playerId: number): PlayerData | undefined {
+        return this.players.get(playerId);
+    }
+
+    // Updates existing player data
+    public updatePlayer(playerId: number, data: PlayerData): void {
+        if (!this.players.has(playerId)) {
+            throw new Error('Player does not exist.');
+        }
+        this.players.set(playerId, data);
+    }
+
+    // Removes a player
+    public removePlayer(playerId: number): void {
+        if (!this.players.delete(playerId)) {
+            throw new Error('Player does not exist.');
+        }
+    }
+
+    // Clears all player data
+    public clearPlayers(): void {
+        this.players.clear();
     }
 }
-
-// Setup logger with rotation
-async function setupLogger(): Promise<Logger> {
-    await ensureLogDir();
-
-    const logger = createLogger({
-        level: 'info',
-        format: format.combine(
-            format.timestamp(),
-            format.json()
-        ),
-        transports: [
-            new transports.File({
-                filename: path.join(logDir, 'combined.log'),
-                maxsize: 5000000, // 5 MB
-                maxFiles: '5d'
-            }),
-            new transports.Console()
-        ]
-    });
-
-    logger.info('Logger initialized');
-    return logger;
-}
-
-export { setupLogger };
