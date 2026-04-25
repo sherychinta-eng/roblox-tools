@@ -1,36 +1,41 @@
-type User = { id: number; name: string; email: string; };
+import { createLogger, format, transports } from 'winston';
+import { Logger } from 'winston';
+import * as path from 'path';
+import { promises as fs } from 'fs';
 
-type UserServiceError = { code: string; message: string; };
+const logDir = path.join(__dirname, 'logs');
 
-class UserService {
-    private users: User[] = [];
-
-    public addUser(user: User): UserServiceError | null {
-        if (!this.isValidUser(user)) {
-            return { code: 'INVALID_USER', message: 'User data is not valid.' };
-        }
-
-        const existingUser = this.users.find(u => u.id === user.id);
-        if (existingUser) {
-            return { code: 'USER_EXISTS', message: 'User already exists.' };
-        }
-
-        this.users.push(user);
-        return null;
-    }
-
-    public getUserById(id: number): User | UserServiceError {
-        const user = this.users.find(u => u.id === id);
-        if (!user) {
-            return { code: 'USER_NOT_FOUND', message: 'User not found.' };
-        }
-
-        return user;
-    }
-
-    private isValidUser(user: User): boolean {
-        return !!user.id && !!user.name && !!user.email;
+// Ensure log directory exists
+async function ensureLogDir() {
+    try {
+        await fs.access(logDir);
+    } catch (error) {
+        await fs.mkdir(logDir);
     }
 }
 
-export default UserService;
+// Setup logger with rotation
+async function setupLogger(): Promise<Logger> {
+    await ensureLogDir();
+
+    const logger = createLogger({
+        level: 'info',
+        format: format.combine(
+            format.timestamp(),
+            format.json()
+        ),
+        transports: [
+            new transports.File({
+                filename: path.join(logDir, 'combined.log'),
+                maxsize: 5000000, // 5 MB
+                maxFiles: '5d'
+            }),
+            new transports.Console()
+        ]
+    });
+
+    logger.info('Logger initialized');
+    return logger;
+}
+
+export { setupLogger };
