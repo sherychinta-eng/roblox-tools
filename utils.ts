@@ -1,38 +1,26 @@
-export function safeParseJson<T>(jsonString: string): T | null {
-    try {
-        return JSON.parse(jsonString);
-    } catch (error) {
-        console.error('Failed to parse JSON:', error);
-        return null;
+function validateInput(input: any): boolean {
+    if (typeof input !== 'string' && typeof input !== 'number') {
+        throw new Error('Invalid input type: must be string or number');
     }
-}
-
-export function validateUserData(userData: any): boolean {
-    if (!userData || typeof userData !== 'object') {
-        console.warn('Invalid user data provided: ', userData);
-        return false;
-    }
-    const { username, age } = userData;
-    if (typeof username !== 'string' || username.trim() === '') {
-        console.warn('Invalid username provided: ', username);
-        return false;
-    }
-    if (typeof age !== 'number' || age <= 0) {
-        console.warn('Invalid age provided: ', age);
-        return false;
+    if (typeof input === 'string' && input.trim() === '') {
+        throw new Error('Invalid input: string cannot be empty');
     }
     return true;
 }
 
-export function handleApiResponse<T>(response: Response): Promise<T | null> {
-    return response.json().then(data => {
-        if (!response.ok) {
-            console.error('API Error:', data);
-            return null;
-        }
-        return data as T;
-    }).catch(error => {
-        console.error('Failed to handle API response:', error);
-        return null;
-    });
+function processInput(input: any): string {
+    try {
+        validateInput(input);
+        // Processing logic here
+        return `Processed Input: ${input}`;
+    } catch (error) {
+        return `Error: ${error.message}`;
+    }
 }
+
+// Main processing loop
+const inputs = ['abc', 123, '', null, undefined];
+inputs.forEach(input => {
+    const result = processInput(input);
+    console.log(result);
+});
