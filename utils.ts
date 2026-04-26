@@ -1,34 +1,32 @@
-// Utility function to retry network operations
-export async function retry<T>(
-    fn: () => Promise<T>,
-    retries: number = 3,
-    delay: number = 1000
-): Promise<T> {
-    let attempts = 0;
-    while (true) {
-        try {
-            return await fn();
-        } catch (error) {
-            attempts++;
-            if (attempts > retries) {
-                throw error;
-            }
-            console.warn(`Attempt ${attempts} failed. Retrying in ${delay}ms...`);
-            await new Promise(res => setTimeout(res, delay));
+function debounce(func: Function, delay: number) {
+    let timeoutId: NodeJS.Timeout | null;
+
+    return function (...args: any[]) {
+        if (timeoutId) {
+            clearTimeout(timeoutId);
         }
-    }
+        timeoutId = setTimeout(() => {
+            func.apply(this, args);
+        }, delay);
+    };
 }
 
-// Example network operation
-export async function fetchData(url: string): Promise<any> {
-    const response = await fetch(url);
-    if (!response.ok) {
-        throw new Error(`Network response was not ok: ${response.statusText}`);
-    }
-    return response.json();
+function throttle(func: Function, limit: number) {
+    let lastFunc: NodeJS.Timeout | null;
+    let lastRan: number;
+
+    return function (...args: any[]) {
+        const context = this;
+        if (!lastRan) {
+            func.apply(context, args);
+            lastRan = Date.now();
+        } else {
+            if (Date.now() - lastRan >= limit) {
+                func.apply(context, args);
+                lastRan = Date.now();
+            }
+        }
+    };
 }
 
-// Example usage of retry function
-export async function fetchWithRetry(url: string) {
-    return retry(() => fetchData(url), 5, 2000);
-}
+export { debounce, throttle };
