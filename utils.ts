@@ -1,26 +1,34 @@
-function validateInput(input: any): boolean {
-    if (typeof input !== 'string' && typeof input !== 'number') {
-        throw new Error('Invalid input type: must be string or number');
+// Utility function to retry network operations
+export async function retry<T>(
+    fn: () => Promise<T>,
+    retries: number = 3,
+    delay: number = 1000
+): Promise<T> {
+    let attempts = 0;
+    while (true) {
+        try {
+            return await fn();
+        } catch (error) {
+            attempts++;
+            if (attempts > retries) {
+                throw error;
+            }
+            console.warn(`Attempt ${attempts} failed. Retrying in ${delay}ms...`);
+            await new Promise(res => setTimeout(res, delay));
+        }
     }
-    if (typeof input === 'string' && input.trim() === '') {
-        throw new Error('Invalid input: string cannot be empty');
-    }
-    return true;
 }
 
-function processInput(input: any): string {
-    try {
-        validateInput(input);
-        // Processing logic here
-        return `Processed Input: ${input}`;
-    } catch (error) {
-        return `Error: ${error.message}`;
+// Example network operation
+export async function fetchData(url: string): Promise<any> {
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`Network response was not ok: ${response.statusText}`);
     }
+    return response.json();
 }
 
-// Main processing loop
-const inputs = ['abc', 123, '', null, undefined];
-inputs.forEach(input => {
-    const result = processInput(input);
-    console.log(result);
-});
+// Example usage of retry function
+export async function fetchWithRetry(url: string) {
+    return retry(() => fetchData(url), 5, 2000);
+}
