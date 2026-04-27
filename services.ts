@@ -1,33 +1,37 @@
-type InputData = { name: string; age: number; email: string; };
+import { GameData, UserData } from './types';
 
-type ValidationResult = { isValid: boolean; errors: string[]; };
-
-function validateInput(data: InputData): ValidationResult {
-    const errors: string[] = [];
-    if (!data.name || data.name.length < 3) {
-        errors.push('Name must be at least 3 characters long.');
-    }
-    if (data.age < 0 || data.age > 120) {
-        errors.push('Age must be between 0 and 120.');
-    }
-    const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
-    if (!emailRegex.test(data.email)) {
-        errors.push('Email must be a valid email address.');
-    }
-    return { isValid: errors.length === 0, errors };
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
 }
 
-function processInput(data: InputData) {
-    const validation = validateInput(data);
-    if (!validation.isValid) {
-        console.error('Input validation failed:', validation.errors);
-        return;
+async function fetchGameData(gameId: string): Promise<ApiResponse<GameData>> {
+  try {
+    const response = await fetch(`https://api.roblox.com/games/${gameId}`);
+    if (!response.ok) {
+      throw new Error(`Error fetching game data: ${response.statusText}`);
     }
-    // Proceed with main processing logic if valid
-    console.log('Processing:', data);
-    // Additional processing code here
+    const data: GameData = await response.json();
+    return { success: true, data };
+  } catch (error) {
+    console.error('Fetch Game Data Failed:', error);
+    return { success: false, error: 'Failed to fetch game data.' };
+  }
 }
 
-// Example usage
-const userInput: InputData = { name: 'Jane', age: 30, email: 'jane@example.com' };
-processInput(userInput);
+async function fetchUserData(userId: string): Promise<ApiResponse<UserData>> {
+  try {
+    const response = await fetch(`https://api.roblox.com/users/${userId}`);
+    if (!response.ok) {
+      throw new Error(`Error fetching user data: ${response.statusText}`);
+    }
+    const data: UserData = await response.json();
+    return { success: true, data };
+  } catch (error) {
+    console.error('Fetch User Data Failed:', error);
+    return { success: false, error: 'Failed to fetch user data.' };
+  }
+}
+
+export { fetchGameData, fetchUserData };
