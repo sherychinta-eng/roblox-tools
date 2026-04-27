@@ -1,37 +1,29 @@
-import { GameData, UserData } from './types';
+type NetworkOptions = {
+    retries?: number;
+    delay?: number;
+};
 
-interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
-}
+async function fetchWithRetry(url: string, options: NetworkOptions = {}): Promise<Response> {
+    const { retries = 3, delay = 1000 } = options;
+    let attempt = 0;
 
-async function fetchGameData(gameId: string): Promise<ApiResponse<GameData>> {
-  try {
-    const response = await fetch(`https://api.roblox.com/games/${gameId}`);
-    if (!response.ok) {
-      throw new Error(`Error fetching game data: ${response.statusText}`);
+    while (attempt <= retries) {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response;
+        } catch (error) {
+            attempt++;
+            if (attempt > retries) {
+                throw new Error(`Failed after ${retries} attempts: ${error.message}`);
+            }
+            console.warn(`Attempt ${attempt} failed: ${error.message}. Retrying in ${delay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
     }
-    const data: GameData = await response.json();
-    return { success: true, data };
-  } catch (error) {
-    console.error('Fetch Game Data Failed:', error);
-    return { success: false, error: 'Failed to fetch game data.' };
-  }
+    throw new Error(`Exceeded maximum retry attempts`);
 }
 
-async function fetchUserData(userId: string): Promise<ApiResponse<UserData>> {
-  try {
-    const response = await fetch(`https://api.roblox.com/users/${userId}`);
-    if (!response.ok) {
-      throw new Error(`Error fetching user data: ${response.statusText}`);
-    }
-    const data: UserData = await response.json();
-    return { success: true, data };
-  } catch (error) {
-    console.error('Fetch User Data Failed:', error);
-    return { success: false, error: 'Failed to fetch user data.' };
-  }
-}
-
-export { fetchGameData, fetchUserData };
+export { fetchWithRetry };
